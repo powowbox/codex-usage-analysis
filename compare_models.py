@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reprice audited token_usage.csv excluding Sundays in Europe/Paris.
+"""Reprice every row in audited token_usage.csv; exclusions belong to the analyzer.
 Run from any directory: python3 /path/to/compare_models.py
 Writes comparison_* files to outputs/ by default; original audit preserved.
 """
@@ -8,8 +8,7 @@ import argparse
 import json
 import hashlib
 from pathlib import Path
-from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
+from datetime import datetime, timezone
 from decimal import Decimal as D
 
 BASE = Path(__file__).resolve().parent
@@ -35,7 +34,7 @@ def print_comparison(results, out):
     print('  '.join('-' * width for width in widths))
     for row in rows:
         print(format_row(row))
-    print('\nDaily = active-day average (Sundays excluded); monthly = daily × 30 active days.')
+    print('\nDaily = active-day average; monthly = daily × 30 active days.')
     print('Optional cache-write surcharge excluded.')
     print(f'Files: {out.resolve()}/')
     print('  comparison_models.md: table; comparison_models.csv: model details;')
@@ -46,7 +45,7 @@ def write_markdown(path, results, summary):
         '# Model Cost Comparison',
         '',
         f"Period: {summary['period_start']} to {summary['period_end']} "
-        f"({summary['active_days_excluding_sunday']} active days, Sundays excluded).",
+        f"({summary['active_days']} active days).",
         '',
         'Daily cost is the average per active day. Monthly cost assumes 30 active',
         'days at the same usage level (daily cost × 30), not a calendar-month forecast.',
@@ -72,24 +71,22 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     before=hashlib.sha256(source.read_bytes()).hexdigest()
     config=json.loads(args.pricing.read_text(encoding='utf-8'))
-    with source.open() as f: original=list(csv.DictReader(f))
-    rows=[]; sundays=[]
-    for r in original:
-        stamp=datetime.fromisoformat(r['timestamp'].replace('Z','+00:00'))
-        day=stamp.astimezone(ZoneInfo('Europe/Paris')).date()
-        assert str(day)==r['date']
+    with source.open() as f: rows=list(csv.DictReader(f))
+    if not rows:
+        ap.error('No consumption found in input CSV')
+    for r in rows:
+        # Dates already reflect the analyzer's selected timezone.
+        datetime.fromisoformat(r['date'])
         r.update({k:int(r[k]) for k in KEYS})
         assert r['input_tokens']==r['uncached_input_tokens']+r['cached_input_tokens']
-        (sundays if day.weekday()==6 else rows).append(r)
     active_days=len({r['date'] for r in rows})
-    start=min(datetime.fromisoformat(r['date']).date() for r in original)
-    end=max(datetime.fromisoformat(r['date']).date() for r in original)
-    calendar_days=sum((start+timedelta(days=i)).weekday()!=6 for i in range((end-start).days+1))
+    start=min(datetime.fromisoformat(r['date']).date() for r in rows)
+    end=max(datetime.fromisoformat(r['date']).date() for r in rows)
+    calendar_days=(end-start).days+1
     totals={k:sum(r[k] for r in rows) for k in KEYS}
-    assert all(totals[k]+sum(r[k] for r in sundays)==sum(r[k] for r in original) for k in KEYS)
-    summary={'source_sha256':before,'timezone':'Europe/Paris','period_start':str(start),'period_end':str(end),
-             'active_days_excluding_sunday':active_days,'calendar_days_excluding_sunday':calendar_days,
-             'excluded_active_sundays':sorted({r['date'] for r in sundays}),
+    summary={'source_sha256':before,'date_basis':'Input CSV dates from analyzer',
+             'period_start':str(start),'period_end':str(end),
+             'active_days':active_days,'calendar_days':calendar_days,
              'retained_calls':len(rows),'retained_sessions':len({r['session_id'] for r in rows}),
              'usage':totals,'cache_hit_ratio':totals['cached_input_tokens']/totals['input_tokens'],
              'max_input_per_call':max(r['input_tokens'] for r in rows),
@@ -119,7 +116,7 @@ def main():
         assert sum(by_day.values())==total
         result={'requested_model':model['requested'],'resolved_model':model['resolved'],
                 'cost_usd':str(total),'mean_per_active_day_usd':str(total/D(active_days)),
-                'mean_per_calendar_day_excluding_sunday_usd':str(total/D(calendar_days)),
+                'mean_per_calendar_day_usd':str(total/D(calendar_days)),
                 'cost_with_max_uncached_write_surcharge_usd':str(hi) if model.get('cache_write_multiplier') else None,
                 'mean_with_max_uncached_write_surcharge_usd':str(hi/D(active_days)) if model.get('cache_write_multiplier') else None,
                 'peak_only_usd':str(sum(peak)) if peak else None,'off_peak_only_usd':str(sum(off)) if off else None,

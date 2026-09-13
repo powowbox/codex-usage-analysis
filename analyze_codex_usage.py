@@ -21,6 +21,7 @@ SUMS = ('input_tokens', 'cached_input_tokens', 'uncached_input_tokens',
         'output_tokens', 'reasoning_tokens', 'total_tokens')
 LABELS = ('task_type', 'success', 'tests_passed', 'build_passed', 'lint_passed',
           'human_accepted', 'retry_count', 'escalated_from_model', 'escalated_to_model')
+WEEKDAYS = ('mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun')
 
 def dt(value):
     return datetime.fromisoformat(value.replace('Z', '+00:00'))
@@ -117,6 +118,8 @@ def main():
     ap.add_argument('--extra-root', type=Path, action='append', default=[])
     ap.add_argument('--output-dir', type=Path, default=Path(__file__).resolve().parent/'outputs')
     ap.add_argument('--timezone', default='Europe/Paris')
+    ap.add_argument('--exclude-days', nargs='+', type=str.lower, choices=WEEKDAYS, default=[],
+                    help='Weekdays to exclude in --timezone, e.g. sat sun (default: none)')
     ap.add_argument('--manifest', type=Path, help='Replay exact file prefixes from a previous run')
     args = ap.parse_args()
     out = args.output_dir.resolve()
@@ -249,6 +252,14 @@ def main():
         source['session_id'] = sid
     rows.sort(key=lambda r: (r['timestamp'], r['session_id'], r['source_line']))
     assert rows, 'No consumption found'
+    assert len(seen_response) == sum(bool(r['response_id']) for r in rows)
+    excluded_days = [day for day in WEEKDAYS if day in args.exclude_days]
+    # Filter only after reconstructing counters and matching responses so that
+    # excluded-day usage cannot leak into the next retained cumulative delta.
+    excluded_rows = [r for r in rows if WEEKDAYS[dt(r['date']).weekday()] in excluded_days]
+    rows = [r for r in rows if WEEKDAYS[dt(r['date']).weekday()] not in excluded_days]
+    if not rows:
+        ap.error('No consumption remains after excluding the selected weekdays')
     grouped = {}
     for name, keys in [('sessions', ('session_id',)), ('daily_summary', ('date',)),
                        ('model_summary', ('provider','model')), ('session_model_summary', ('session_id','provider','model'))]:
@@ -276,6 +287,8 @@ def main():
     write_csv(out/'token_usage.csv', rows)
     summary = aggregate(rows)
     summary.update({'timezone': args.timezone, 'analysis_started_at_utc': started,
+                    'excluded_days': excluded_days,
+                    'excluded_usage': aggregate(excluded_rows),
                     'period_start': rows[0]['date'], 'period_end': rows[-1]['date'],
                     'first_usage_timestamp': rows[0]['timestamp'], 'last_usage_timestamp': rows[-1]['timestamp'],
                     'active_days': len(grouped['daily_summary']),
@@ -290,7 +303,8 @@ def main():
             if summary[k] is not None:
                 assert sum(int(r[k]) for r in loaded) == summary[k], (name,k)
         validation['csv_sums'][name] = 'passed'
-    assert len(seen_response) == sum(bool(r['response_id']) for r in rows)
+    retained_response_ids = [r['response_id'] for r in rows if r['response_id']]
+    assert len(retained_response_ids) == len(set(retained_response_ids))
     validation['response_ids_unique'] = True
     # Re-read all analyzed prefixes: concurrent appends are allowed, edits are not.
     for source in sources:
@@ -313,7 +327,7 @@ def main():
     dump(out/'summary.json', summary)
     dump(out/'validation.json', validation)
     dump(out/'source_manifest.json', {'analysis_started_at_utc': started, 'discovery': discovery, 'sources': sources})
-    print(json.dumps({k: summary[k] for k in ['input_tokens','cached_input_tokens','uncached_input_tokens','output_tokens','total_tokens','cache_hit_ratio','number_of_sessions','number_of_llm_calls','period_start','period_end','diagnostics']}, indent=2))
+    print(json.dumps({k: summary[k] for k in ['input_tokens','cached_input_tokens','uncached_input_tokens','output_tokens','total_tokens','cache_hit_ratio','number_of_sessions','number_of_llm_calls','period_start','period_end','excluded_days','diagnostics']}, indent=2))
 
 if __name__ == '__main__':
     main()
