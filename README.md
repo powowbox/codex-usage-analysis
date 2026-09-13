@@ -9,12 +9,7 @@ Codex sources are opened read-only. No API calls or keys are required.
 ## Installation
 
 Python **3.9 or later**, with no external dependencies. Clone the repository and
-open a terminal in its directory. The commands also work from another directory
-when using the full path to the script.
-
-```bash
-sh run_analysis.sh
-```
+open a terminal in its directory. 
 
 The launcher runs the analyzer first, then compares model costs only if the
 analysis succeeds. It works from any directory when called with its full path.
@@ -26,7 +21,7 @@ Results are written to **`outputs/`.
 ## Commands
 
 ```bash
-# Run both steps with a custom output directory and analyzer options
+# Run the usage analysis and display the models cost estimation
 sh run_analysis.sh outputs/weekdays --exclude-days sat sun
 
 # Choose the logs and output directory
