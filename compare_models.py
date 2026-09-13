@@ -14,6 +14,15 @@ from decimal import Decimal as D
 BASE = Path(__file__).resolve().parent
 KEYS = ['input_tokens', 'cached_input_tokens', 'uncached_input_tokens', 'output_tokens', 'total_tokens']
 
+def model_rates(model, input_tokens):
+    if 'tiers' in model:
+        for index, tier in enumerate(model['tiers']):
+            if input_tokens <= tier.get('max_input_tokens', float('inf')):
+                return [D(str(x)) for x in tier['rates']], index > 0
+        raise ValueError('Pricing tiers do not cover input token count')
+    is_long = input_tokens > model.get('threshold', float('inf'))
+    return [D(str(x)) for x in model['long_rates' if is_long else 'rates']], is_long
+
 def write_csv(path, rows):
     with path.open('w', newline='', encoding='utf-8') as f:
         w=csv.DictWriter(f, list(rows[0]));w.writeheader();w.writerows(rows)
@@ -95,8 +104,7 @@ def main():
     for model in config['models']:
         amounts=[]; upper=[]; peak=[]; off=[]; by_day={}; long_count=0; peak_count=0
         for r in rows:
-            is_long=r['input_tokens']>model.get('threshold',float('inf'))
-            rates=[D(str(x)) for x in model['long_rates' if is_long else 'rates']]
+            rates,is_long=model_rates(model,r['input_tokens'])
             long_count+=is_long
             value=sum(D(r[k])*rate for k,rate in zip(['uncached_input_tokens','cached_input_tokens','output_tokens'],rates))/D(1000000)
             high=value

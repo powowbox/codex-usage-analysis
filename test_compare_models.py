@@ -7,9 +7,27 @@ import sys
 import tempfile
 import unittest
 from decimal import Decimal
+from compare_models import model_rates
 
 
 class ComparisonTests(unittest.TestCase):
+    def test_qwen_pricing_boundaries(self):
+        config = json.loads(Path(__file__).with_name('comparison_pricing.json').read_text())
+        models = {m['requested']: m for m in config['models']}
+        for tokens, expected in [(128000, ['0.029', '0.003', '0.287']),
+                                 (128001, ['0.115', '0.012', '1.147']),
+                                 (256000, ['0.115', '0.012', '1.147']),
+                                 (256001, ['0.172', '0.017', '1.72'])]:
+            with self.subTest(tokens=tokens):
+                rates, is_long = model_rates(models['qwen3.5-flash'], tokens)
+                self.assertEqual(rates, list(map(Decimal, expected)))
+                self.assertEqual(is_long, tokens > 128000)
+        for tokens, expected in [(256000, ['0.276', '0.056', '1.101']),
+                                 (256001, ['0.826', '0.166', '3.301'])]:
+            rates, is_long = model_rates(models['qwen3.7-plus'], tokens)
+            self.assertEqual(rates, list(map(Decimal, expected)))
+            self.assertEqual(is_long, tokens > 256000)
+
     def test_sunday_and_analyzer_dates_are_preserved(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

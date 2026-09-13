@@ -119,14 +119,19 @@ pauses; it does not measure model latency.
 
 ## Models Included in Cost Estimates
 
-By default, `compare_models.py` estimates costs for the eight entries in
-`comparison_pricing.json`. The bundled snapshot is dated **2026-09-13**:
+By default, `compare_models.py` estimates costs for the eleven entries in
+`comparison_pricing.json`. The bundled snapshot is dated **2026-09-13**,
+with GLM-5.3, GLM-5.3-Flash, Qwen3.7 Plus, and Qwen3.5 Flash pricing
+checked on **2026-09-14**:
 
 | Configuration identifier | Model used for the estimate in this snapshot |
 | --- | --- |
+| `glm-5.3-flash` | GLM-5.3-Flash |
+| `glm-5.3` | GLM-5.3 |
 | `deepseek-v4-flash` | DeepSeek V4.1 Flash (legacy alias) |
 | `deepseek-v4-pro` | DeepSeek V4 Pro 0813 |
 | `qwen3.7-plus` | Qwen3.7 Plus — Frankfurt/global, implicit cache |
+| `qwen3.5-flash` | Qwen3.5 Flash — Frankfurt/global, explicit cache |
 | `gemini-flash` | Gemini 3.8 Flash |
 | `gemini-pro` | Gemini 3.1 Pro Preview |
 | `openai-gpt-5.6` | GPT-5.6 Sol |
@@ -150,6 +155,8 @@ Simulated costs preserve the token volumes and cache usage observed in Codex.
 A different tokenizer, agent strategy, or success rate would change actual
 consumption. Unobservable additional costs (cache storage, tools, taxes) are not
 invented. The OpenAI cache write surcharge is presented as a separate scenario.
+Qwen3.5 Flash assumes explicit cache reads; cache creation and storage fees
+are excluded. Its three rate tiers change above 128K and 256K input tokens.
 Context-size pricing tiers are applied per call. The DeepSeek schedule is applied
 to timestamps as a simulation using published rates, not as a reconstruction of
 past invoices.
