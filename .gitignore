@@ -1,0 +1,30 @@
+# Local consumption, identifiers, source paths and generated reports
+/outputs/
+/work/
+/data/
+*.csv
+*.jsonl
+*.sqlite*
+*.db
+*.db-wal
+*.db-shm
+*.zip
+source_manifest.json
+summary.json
+validation.json
+comparison_summary.json
+manual_checks.json
+diagnostic_crosscheck.json
+
+# Python and local environment
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.env
+.env.*
+!.env.example
+.DS_Store
+.idea/
+.vscode/

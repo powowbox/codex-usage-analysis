@@ -1,0 +1,17 @@
+{
+  "checked_on": "2026-09-13",
+  "basis": "Current published standard API rates applied counterfactually to the entire historical token workload; not historical invoices",
+  "currency": "USD",
+  "rates_unit": "per million tokens",
+  "models": [
+    {"requested": "deepseek-v4-flash", "resolved": "DeepSeek V4.1 Flash (legacy alias)", "rates": [0.3, 0.006, 1.2], "deepseek_schedule": true, "source": "https://api-docs.deepseek.com/quick_start/pricing/", "note": "Live page says v4-flash is retired and requests are served/billed as V4.1 Flash. Search snippet still showed old V4 pricing; live page used."},
+    {"requested": "deepseek-v4-pro", "resolved": "DeepSeek V4 Pro 0813", "rates": [1.32, 0.044, 3.96], "deepseek_schedule": true, "source": "https://api-docs.deepseek.com/quick_start/pricing/"},
+    {"requested": "qwen3.7-plus", "resolved": "Qwen3.7 Plus — Frankfurt/global, implicit cache", "rates": [0.276, 0.056, 1.101], "threshold": 256000, "long_rates": [0.826, 0.166, 3.301], "source": "https://www.alibabacloud.com/help/en/model-studio/qwen3-7-plus"},
+    {"requested": "gemini-flash", "resolved": "Gemini 3.8 Flash", "rates": [0.75, 0.075, 3.75], "source": "https://ai.google.dev/gemini-api/docs/pricing", "note": "Promotional rates through 2026-12-31. Explicit cache storage at $0.50/M token-hours excluded; implicit caching can avoid explicit storage."},
+    {"requested": "gemini-pro", "resolved": "Gemini 3.1 Pro Preview", "rates": [2, 0.2, 12], "threshold": 200000, "long_rates": [4, 0.4, 18], "source": "https://ai.google.dev/gemini-api/docs/pricing", "note": "Explicit cache storage at $4.50/M token-hours excluded."},
+    {"requested": "openai-gpt-5.6", "resolved": "GPT-5.6 Sol", "rates": [4, 0.4, 20], "threshold": 272000, "long_rates": [8, 0.8, 30], "cache_write_multiplier": 1.25, "source": "https://developers.openai.com/api/docs/models/gpt-5.6-sol", "note": "Base estimate before cache-write surcharge. Extra bound assumes 0 to all uncached tokens are cache writes. Promotional pricing at least through 2026-11-21."},
+    {"requested": "openai-gpt-6-astra", "resolved": "GPT-6 Astra", "rates": [10, 1, 50], "threshold": 272000, "long_rates": [20, 2, 75], "cache_write_multiplier": 1.25, "source": "https://developers.openai.com/api/docs/models/gpt-6-astra", "note": "Standard API rates. Base estimate before cache-write surcharge. Extra bound assumes 0 to all uncached tokens are cache writes. Above 272K input tokens, input and cache rates double and output rates increase by 1.5x for the full request."},
+    {"requested": "mistral-medium-3.5", "resolved": "Mistral Medium 3.5", "rates": [1.5, 0.15, 7.5], "source": "https://docs.mistral.ai/inference/pricing"}
+  ],
+  "deepseek_peak_utc": {"weekdays": [0, 1, 2, 3, 4], "intervals_minutes": [[60, 240], [360, 600]], "off_peak_multiplier": 0.5}
+}
