@@ -116,7 +116,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--codex-home', type=Path, default=Path(os.environ.get('CODEX_HOME', Path.home()/'.codex')))
     ap.add_argument('--extra-root', type=Path, action='append', default=[])
-    ap.add_argument('--output-dir', type=Path, default=Path(__file__).resolve().parent/'outputs')
+    ap.add_argument('--output-dir', type=Path, default=Path(__file__).resolve().parent.parent/'outputs')
     ap.add_argument('--timezone', default='Europe/Paris')
     ap.add_argument('--exclude-days', nargs='+', type=str.lower, choices=WEEKDAYS, default=[],
                     help='Weekdays to exclude in --timezone, e.g. sat sun (default: none)')

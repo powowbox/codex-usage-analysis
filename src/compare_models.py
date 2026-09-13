@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Reprice every row in audited token_usage.csv; exclusions belong to the analyzer.
-Run from any directory: python3 /path/to/compare_models.py
+Run from any directory: python3 /path/to/src/compare_models.py
 Writes comparison_* files to outputs/ by default; original audit preserved.
 """
 import csv
@@ -11,7 +11,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 from decimal import Decimal as D
 
-BASE = Path(__file__).resolve().parent
+BASE = Path(__file__).resolve().parent.parent
 KEYS = ['input_tokens', 'cached_input_tokens', 'uncached_input_tokens', 'output_tokens', 'total_tokens']
 
 def model_rates(model, input_tokens):

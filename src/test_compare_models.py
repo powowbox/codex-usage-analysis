@@ -12,7 +12,7 @@ from compare_models import model_rates
 
 class ComparisonTests(unittest.TestCase):
     def test_qwen_pricing_boundaries(self):
-        config = json.loads(Path(__file__).with_name('comparison_pricing.json').read_text())
+        config = json.loads((Path(__file__).resolve().parent.parent / 'comparison_pricing.json').read_text())
         models = {m['requested']: m for m in config['models']}
         for tokens, expected in [(128000, ['0.029', '0.003', '0.287']),
                                  (128001, ['0.115', '0.012', '1.147']),

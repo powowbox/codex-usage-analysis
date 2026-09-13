@@ -13,9 +13,11 @@ open a terminal in its directory. The commands also work from another directory
 when using the full path to the script.
 
 ```bash
-python3 analyze_codex_usage.py
-python3 compare_models.py
+sh run_analysis.sh
 ```
+
+The launcher runs the analyzer first, then compares model costs only if the
+analysis succeeds. It works from any directory when called with its full path.
 
 The analysis searches for active and archived rollouts under `$CODEX_HOME`, or
 `~/.codex` by default, then supplements the list using `state_5.sqlite` if present.
@@ -24,23 +26,26 @@ Results are written to **`outputs/`.
 ## Commands
 
 ```bash
+# Run both steps with a custom output directory and analyzer options
+sh run_analysis.sh outputs/weekdays --exclude-days sat sun
+
 # Choose the logs and output directory
-python3 analyze_codex_usage.py --codex-home /path/to/codex --output-dir outputs/run
+python3 src/analyze_codex_usage.py --codex-home /path/to/codex --output-dir outputs/run
 
 # Add a rollout root directory without modifying the sources
-python3 analyze_codex_usage.py --extra-root /path/to/archived-rollouts
+python3 src/analyze_codex_usage.py --extra-root /path/to/archived-rollouts
 
 # Exclude weekends from the audit
-python3 analyze_codex_usage.py --exclude-days sat sun
+python3 src/analyze_codex_usage.py --exclude-days sat sun
 
 # Reprocess the same file prefixes with SHA-256 verification
-python3 analyze_codex_usage.py --manifest outputs/source_manifest.json --output-dir outputs/replay
+python3 src/analyze_codex_usage.py --manifest outputs/source_manifest.json --output-dir outputs/replay
 
 # Compare costs using an existing audit
-python3 compare_models.py --input outputs/token_usage.csv --output-dir outputs/comparison
+python3 src/compare_models.py --input outputs/token_usage.csv --output-dir outputs/comparison
 
 # Check accounting rules against test data
-python3 -m unittest discover -v
+python3 -m unittest discover -s src -v
 ```
 
 `analyze_codex_usage.py` also accepts `--timezone` (Europe/Paris by default).
@@ -61,12 +66,14 @@ The comparison script applies no additional weekday exclusions.
 ## Structure
 
 ```text
-analyze_codex_usage.py       Extraction, aggregation, validation
-compare_models.py           Multi-model cost simulation
-comparison_pricing.json     Comparison rates, sources, and schedule
-test_analyze_codex_usage.py  Synthetic token counter tests
-.github/workflows/tests.yml GitHub Actions tests
-outputs/                    Local results, never tracked by Git
+run_analysis.sh                Run extraction and cost comparison in sequence
+src/analyze_codex_usage.py      Extraction, aggregation, validation
+src/compare_models.py          Multi-model cost simulation
+src/test_analyze_codex_usage.py Synthetic token counter tests
+src/test_compare_models.py      Model comparison tests
+comparison_pricing.json        Comparison rates, sources, and schedule
+.github/workflows/tests.yml    GitHub Actions tests
+outputs/                       Local results, never tracked by Git
 ```
 
 The repository requires no package installation or remote service.
